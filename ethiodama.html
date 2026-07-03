@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EthioDama</title>
+<style>
+  :root{
+    --bg:#121212;
+    --bg2:#1a1a1a;
+    --gold:#FFD700;
+    --crimson:#DC143C;
+    --text:#f0f0f0;
+    --muted:#999;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .screen{display:none;width:100%;flex:1;flex-direction:column;align-items:center;}
+  .screen.active{display:flex;}
+
+  /* HEADER */
+  header{
+    width:100%;
+    padding:20px 30px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    border-bottom:2px solid var(--gold);
+    background:linear-gradient(180deg,#1c1c1c,#121212);
+  }
+  .logo{
+    font-size:28px;
+    font-weight:900;
+    letter-spacing:2px;
+    color:var(--gold);
+    text-shadow:0 0 10px rgba(255,215,0,0.4);
+  }
+  .logo span{color:var(--crimson);}
+  .wallet-badge{
+    background:#1f1f1f;
+    border:1px solid var(--gold);
+    border-radius:30px;
+    padding:8px 18px;
+    font-size:14px;
+    color:var(--gold);
+    font-weight:600;
+  }
+  .conn-badge{
+    font-size:11px;
+    padding:4px 10px;
+    border-radius:20px;
+    margin-left:10px;
+    font-weight:700;
+    letter-spacing:.5px;
+  }
+  .conn-badge.online{background:rgba(76,175,80,0.15);color:#4CAF50;border:1px solid #4CAF50;}
+  .conn-badge.offline{background:rgba(220,20,60,0.15);color:var(--crimson);border:1px solid var(--crimson);}
+
+  /* LANDING */
+  .landing-content{
+    max-width:1000px;
+    width:100%;
+    padding:40px 20px;
+    text-align:center;
+  }
+  .landing-content h1{
+    font-size:32px;
+    margin-bottom:10px;
+    color:var(--text);
+  }
+  .landing-content h1 span{color:var(--gold);}
+  .landing-content p.sub{
+    color:var(--muted);
+    margin-bottom:40px;
+    font-size:15px;
+  }
+  .wager-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:20px;
+  }
+  @media(max-width:400px){
+    .wager-grid{grid-template-columns:1fr 1fr;gap:10px;padding:0 10px;}
+    .wager-card .amount{font-size:22px;}
+    header{padding:10px 12px;}
+  }
+  .wager-card{
+    background:linear-gradient(145deg,#1e1e1e,#161616);
+    border:1px solid #2a2a2a;
+    border-radius:16px;
+    padding:30px 15px;
+    cursor:pointer;
+    transition:all .25s ease;
+    position:relative;
+    overflow:hidden;
+  }
+  .wager-card::before{
+    content:'';
+    position:absolute;
+    top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--gold),var(--crimson));
+    transform:scaleX(0);
+    transition:transform .25s ease;
+  }
+  .wager-card:hover{
+    transform:translateY(-6px);
+    border-color:var(--gold);
+    box-shadow:0 10px 30px rgba(255,215,0,0.15);
+  }
+  .wager-card:hover::before{transform:scaleX(1);}
+  .wager-card .amount{
+    font-size:30px;
+    font-weight:800;
+    color:var(--gold);
+    margin-bottom:6px;
+  }
+  .wager-card .label{
+    color:var(--muted);
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+
+  /* MODAL OVERLAY (Telebirr) */
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    backdrop-filter:blur(4px);
+    z-index:1000;
+    align-items:center;
+    justify-content:center;
+  }
+  .modal-overlay.active{display:flex;}
+  .telebirr-modal{
+    background:#fff;
+    color:#222;
+    width:340px;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    animation:popIn .25s ease;
+  }
+  @keyframes popIn{from{transform:scale(.9);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .telebirr-header{
+    background:#8e2de2;
+    background:linear-gradient(135deg,#7b1fa2,#4a148c);
+    color:#fff;
+    padding:20px;
+    text-align:center;
+  }
+  .telebirr-header img{height:28px;margin-bottom:6px;}
+  .telebirr-header h3{font-size:18px;letter-spacing:1px;}
+  .telebirr-body{padding:25px;}
+  .telebirr-body .row{
+    display:flex;justify-content:space-between;
+    padding:10px 0;border-bottom:1px solid #eee;
+    font-size:14px;
+  }
+  .telebirr-body .row span:last-child{font-weight:700;}
+  .telebirr-body .total{
+    font-size:22px;font-weight:900;color:#4a148c;
+    text-align:center;margin:20px 0;
+  }
+  .pay-btn{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    background:linear-gradient(135deg,#7b1fa2,#4a148c);
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    transition:opacity .2s;
+  }
+  .pay-btn:hover{opacity:.9;}
+  .cancel-link{
+    display:block;text-align:center;margin-top:14px;
+    color:#999;font-size:13px;cursor:pointer;text-decoration:underline;
+  }
+  .processing{
+    text-align:center;padding:30px 0;
+  }
+  .spinner{
+    width:40px;height:40px;
+    border:4px solid #eee;
+    border-top-color:#4a148c;
+    border-radius:50%;
+    animation:spin 1s linear infinite;
+    margin:0 auto 15px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* LOBBY */
+  .lobby-content{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:20px;
+  }
+  .big-spinner{
+    width:90px;height:90px;
+    border:6px solid #2a2a2a;
+    border-top-color:var(--gold);
+    border-radius:50%;
+    animation:spin 1.2s linear infinite;
+    margin-bottom:30px;
+  }
+  .lobby-content h2{font-size:24px;margin-bottom:10px;}
+  .lobby-content .timer{
+    font-size:48px;
+    font-weight:900;
+    color:var(--gold);
+    margin:15px 0;
+    font-family:monospace;
+  }
+  .lobby-content p{color:var(--muted);max-width:400px;}
+  .lobby-notice{
+    margin-top:25px;
+    background:#1e1e1e;
+    border:1px solid var(--crimson);
+    border-radius:12px;
+    padding:18px 24px;
+    max-width:420px;
+    display:none;
+  }
+  .lobby-notice.show{display:block;}
+  .lobby-notice strong{color:var(--gold);}
+  .continue-btn{
+    margin-top:20px;
+    background:linear-gradient(135deg,var(--gold),#b8860b);
+    color:#1a1a1a;
+    border:none;
+    padding:12px 30px;
+    font-weight:800;
+    border-radius:30px;
+    cursor:pointer;
+    font-size:15px;
+    display:none;
+  }
+  .continue-btn.show{display:inline-block;}
+  .cancel-queue-btn{
+    margin-top:14px;
+    background:transparent;
+    color:var(--muted);
+    border:1px solid #333;
+    padding:10px 24px;
+    font-weight:600;
+    border-radius:30px;
+    cursor:pointer;
+    font-size:13px;
+  }
+  .cancel-queue-btn:hover{border-color:var(--crimson);color:var(--crimson);}
+
+  /* GAME SCREEN */
+  .game-wrap{
+    width:100%;
+    max-width:600px;
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .game-hud{
+    display:flex;
+    justify-content:space-between;
+    width:100%;
+    margin-bottom:15px;
+    align-items:center;
+  }
+  .player-badge{
+    display:flex;align-items:center;gap:8px;
+    background:#1e1e1e;border:1px solid #333;
+    border-radius:10px;padding:8px 14px;
+    font-size:14px;font-weight:700;
+  }
+  .player-badge.active{border-color:var(--gold);box-shadow:0 0 10px rgba(255,215,0,0.3);}
+  .piece-icon{width:16px;height:16px;border-radius:50%;display:inline-block;}
+  .piece-icon.red{background:var(--crimson);}
+  .piece-icon.white{background:#eee;border:1px solid #999;}
+  .turn-timer{
+    font-size:22px;font-weight:900;color:var(--gold);font-family:monospace;
+  }
+  .board{
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    grid-template-rows:repeat(8,1fr);
+    width:100%;
+    aspect-ratio:1/1;
+    border:4px solid var(--gold);
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0 10px 40px rgba(0,0,0,0.6);
+  }
+  .cell{
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+    aspect-ratio:1/1;
+  }
+  .cell.dark{background:#3a2a1a;}
+  .cell.light{background:#e8d8b8;}
+  .cell.legal-move::after{
+    content:'';
+    position:absolute;
+    width:22%;height:22%;
+    background:rgba(255,215,0,0.7);
+    border-radius:50%;
+  }
+  .piece{
+    width:78%;height:78%;
+    border-radius:50%;
+    cursor:pointer;
+    box-shadow:inset 0 -4px 6px rgba(0,0,0,0.3),0 4px 8px rgba(0,0,0,0.5);
+    transition:transform .15s;
+    position:relative;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .piece.red{background:radial-gradient(circle at 35% 30%,#ff6b6b,var(--crimson) 70%);}
+  .piece.white{background:radial-gradient(circle at 35% 30%,#fff,#ccc 70%);}
+  .piece.selected{
+    transform:scale(1.08);
+    box-shadow:0 0 0 4px var(--gold),0 4px 10px rgba(0,0,0,0.5);
+  }
+  .piece.king::after{
+    content:'★';
+    color:var(--gold);
+    font-size:18px;
+    text-shadow:0 1px 2px rgba(0,0,0,0.6);
+  }
+  .game-info{
+    margin-top:15px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+  }
+  .wager-info{
+    margin-top:10px;
+    background:#1e1e1e;
+    border:1px solid #333;
+    border-radius:10px;
+    padding:10px 20px;
+    font-size:14px;
+  }
+  .wager-info span{color:var(--gold);font-weight:700;}
+
+  /* RESULT MODAL */
+  .result-overlay{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(0,0,0,0.8);
+    z-index:1000;
+    align-items:center;justify-content:center;
+  }
+  .result-overlay.active{display:flex;}
+  .result-card{
+    background:var(--bg2);
+    border:2px solid var(--gold);
+    border-radius:20px;
+    padding:40px 30px;
+    text-align:center;
+    max-width:360px;
+    box-shadow:0 0 60px rgba(255,215,0,0.2);
+    animation:popIn .3s ease;
+  }
+  .result-card h2{
+    font-size:30px;margin-bottom:10px;
+  }
+  .result-card h2.win{color:var(--gold);}
+  .result-card h2.lose{color:var(--crimson);}
+  .result-card .payout{
+    font-size:36px;font-weight:900;margin:20px 0;color:#fff;
+  }
+  .result-card p{color:var(--muted);font-size:13px;margin-bottom:5px;}
+  .result-card .reason{
+    font-size:12px;color:var(--muted);margin-top:10px;font-style:italic;
+  }
+  .result-btn{
+    margin-top:20px;
+    background:linear-gradient(135deg,var(--gold),#b8860b);
+    color:#1a1a1a;
+    border:none;
+    padding:12px 30px;
+    font-weight:800;
+    border-radius:30px;
+    cursor:pointer;
+    font-size:15px;
+    width:100%;
+  }
+  footer{
+    padding:15px;color:#555;font-size:12px;text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Ethio<span>Dama</span> 🦁</div>
+  <div style="display:flex;align-items:center;">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="wallet-badge" id="walletBadge">💰 0 ETB</div>
+      <div id="rankBadge" style="background:rgba(205,127,50,0.2);border:1px solid #cd7f32;color:#cd7f32;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700">🥉 Bronze</div>
+    </div>
+    <button onclick="openHistory()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:var(--text);padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer">📋 ታሪክ</button>
+    <span class="conn-badge offline" id="connBadge">OFFLINE</span>
+  </div>
+</header>
+
+<!-- SCREEN 1: LANDING -->
+<div class="screen active" id="screen-landing">
+  <div class="landing-content">
+    <h1>Play. Compete. <span>Win.</span></h1>
+    <p class="sub">ለመሳተፍ የምዝገባ ክፍያ ምረጥ — አሸናፊ ሽልማት ያገኛል!</p>
+    <div id="depositNotice" style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.2);border-radius:10px;padding:12px 16px;margin-bottom:15px;text-align:center;display:none">
+      <p style="color:var(--gold);font-size:13px;margin:0">💳 Entry fee ከ Chapa ይከፈላል — Telebirr፣ CBE፣ ወይም card ይቀበላል</p>
+    </div>
+    <div class="wager-grid" id="wagerGrid">
+      <!-- generated by JS -->
+    </div>
+    <div style="margin-top:20px;text-align:center">
+      <button onclick="startFreePlay()" style="background:transparent;border:1px solid rgba(255,215,0,0.3);color:var(--muted);padding:10px 28px;border-radius:8px;font-size:13px;cursor:pointer;transition:all 0.2s">
+        🎮 Free Play — ከሌላ ተጫዋቾ ጋር ነፃ ጨዋታ
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- RULES SCREEN -->
+<div class="screen" id="screen-rules">
+  <div style="max-width:480px;margin:0 auto;padding:20px">
+    <div style="display:flex;align-items:center;gap:15px;margin-bottom:25px">
+      <button onclick="showScreen('screen-landing')" style="background:none;border:none;color:var(--gold);font-size:22px;cursor:pointer">←</button>
+      <h2 style="color:var(--gold);font-size:20px;margin:0">📖 የጨዋታ ህግጋት</h2>
+    </div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:20px;margin-bottom:15px">
+      <h3 style="color:var(--gold);margin:0 0 12px">🎯 መሰረታዊ ህጎች</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.7;margin:0">
+        • ቀይ ጦር ወደ ላይ ይጓዛሉ — ነጭ ወደ ታች<br>
+        • ጦር ወደፊት ብቻ ዲያጎናሌ ይሄዳሉ<br>
+        • መብላት ካለ ግዴታ መብላት አለብህ<br>
+        • ጠላት ጦርን ዘሎ ወደ ባዶ ቦታ ሲወድቅ ይበላሉ<br>
+        • ተደጋጋሚ መብላት በአንድ ተራ ይፈቀዳል
+      </p>
+    </div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:20px;margin-bottom:15px">
+      <h3 style="color:var(--gold);margin:0 0 12px">👑 ፈርዝ (Flying King)</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.7;margin:0">
+        • ጦር መጨረሻ ረድፍ ሲደርስ ፈርዝ ይሆናል<br>
+        • ፈርዝ ምንም ያህል ቦታ ዲያጎናሌ ይሄዳሉ<br>
+        • ፈርዝ ከጠላት ፈርዝ ባሻገር ሁሉ ቦታ ሊያርፍ ይችላል<br>
+        • ፈርዝ ወደፊትም ወደኋላም ይሄዳሉ
+      </p>
+    </div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:20px;margin-bottom:15px">
+      <h3 style="color:var(--gold);margin:0 0 12px">🏆 ማሸነፍ</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.7;margin:0">
+        • ሁሉንም የጠላት ጦሮች ሲበሉ<br>
+        • ጠላት መሄጃ ሲያጣ<br>
+        • ጠላት 30 ሰኮንድ ጊዜ ሲያልፍ (timeout)
+      </p>
+    </div>
+    <div style="background:rgba(255,215,0,0.08);border:1px solid rgba(255,215,0,0.2);border-radius:12px;padding:15px;margin-bottom:15px">
+      <h3 style="color:var(--gold);margin:0 0 8px">💰 ሽልማት</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.7;margin:0">
+        ሁለቱ ተጫዋቾች entry fee ይከፍላሉ → አሸናፊ 80% ይወስዳል → 20% platform fee
+      </p>
+    </div>
+    <button onclick="showScreen('screen-landing')" style="width:100%;background:var(--gold);color:#000;border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-top:5px">
+      ✅ ገባኝ — ጨዋታ እጀምር
+    </button>
+  </div>
+</div>
+
+<!-- SCREEN 2: LOBBY -->
+<div class="screen" id="screen-lobby">
+  <div class="lobby-content">
+    <div class="big-spinner" id="lobbySpinner"></div>
+    <h2 id="lobbyTitle">Finding an active opponent...</h2>
+    <div class="timer" id="lobbyTimer">60</div>
+    <p id="lobbyText">ተጫዋች እየፈለጉ ነን — የምዝገባ ክፍያ: <strong id="lobbyAmount">0</strong> ETB</p>
+    <div class="lobby-notice" id="lobbyNotice">
+      <strong>No opponent found.</strong><br><br>
+      Switching to <strong>Free Play Mode</strong> against the Bot.<br>
+      Your wager has been <strong>safely refunded</strong> to your simulated Telebirr wallet.
+    </div>
+    <button class="continue-btn" id="continueBtn">Continue to Free Play</button>
+    <button class="cancel-queue-btn" id="cancelQueueBtn">Cancel & Return</button>
+  </div>
+</div>
+
+<!-- SCREEN 3: GAME -->
+<div class="screen" id="screen-game">
+  <div class="game-wrap">
+    <div class="game-hud">
+      <div class="player-badge active" id="badgeRed"><span class="piece-icon red"></span> <span id="redLabel">You (Red)</span></div>
+      <div class="turn-timer" id="turnTimer">30</div>
+      <div class="player-badge" id="badgeWhite"><span class="piece-icon white"></span> <span id="whiteLabel">Opponent (White)</span></div>
+    </div>
+    <div class="board" id="board"></div>
+    <div class="wager-info">የምዝገባ ክፍያ: <span id="gameWagerDisplay">0</span> ETB &nbsp;|&nbsp; ሽልማት: <span id="potentialPayout">0</span> ETB</div>
+    <div class="game-info" id="gameStatus">Your turn — select a red piece to move.</div>
+  </div>
+</div>
+
+<!-- TELEBIRR MODAL -->
+<div class="modal-overlay" id="telebirrModal">
+  <div class="telebirr-modal">
+    <div class="telebirr-header">
+      <h3>📱 telebirr Checkout</h3>
+    </div>
+    <div class="telebirr-body" id="telebirrBody">
+      <div class="row"><span>Merchant</span><span>EthioDama Gaming</span></div>
+      <div class="row"><span>Reference</span><span id="telebirrRef">TXN-000000</span></div>
+      <div class="row"><span>Wager Amount</span><span id="telebirrAmount">0 ETB</span></div>
+      <div class="total" id="telebirrTotal">0.00 ETB</div>
+      <button class="pay-btn" id="approveBtn">Approve & Pay</button>
+      <span class="cancel-link" id="cancelBtn">Cancel Transaction</span>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT MODAL -->
+<!-- TRANSACTION HISTORY SCREEN -->
+<div class="screen" id="screen-history">
+  <div style="max-width:480px;margin:0 auto;padding:20px">
+    <div style="display:flex;align-items:center;gap:15px;margin-bottom:25px">
+      <button onclick="showScreen('screen-lobby')" style="background:none;border:none;color:var(--gold);font-size:22px;cursor:pointer">←</button>
+      <h2 style="color:var(--gold);font-size:20px;margin:0">📋 የሂሳብ ታሪክ</h2>
+    </div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:15px 20px;margin-bottom:20px;display:flex;justify-content:space-between">
+      <div>
+        <div style="color:var(--muted);font-size:12px">አሁን ያለ ገንዘብ</div>
+        <div id="historyWallet" style="color:var(--gold);font-size:22px;font-weight:700">0 ETB</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:var(--muted);font-size:12px">ደረጃ</div>
+        <div id="historyRank" style="color:var(--gold);font-size:18px;font-weight:700">🥉 Bronze</div>
+        <div style="color:var(--muted);font-size:11px"><span id="historyWins">0</span>W / <span id="historyLosses">0</span>L</div>
+      </div>
+    </div>
+    <div id="txList" style="padding:0 5px">
+      <p style="color:var(--muted);text-align:center;padding:20px">ምንም ታሪክ የለም</p>
+    </div>
+  </div>
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-card">
+    <h2 id="resultTitle">You Win!</h2>
+    <p>የምዝገባ ክፍያ: <span id="resultWager">0</span> ETB</p>
+    <p>House Rake (20%): <span id="resultRake">0</span> Birr</p>
+    <div class="payout" id="resultPayout">+0 Birr</div>
+    <div class="reason" id="resultReason"></div>
+    <button class="result-btn" id="playAgainBtn">Back to Lobby</button>
+  </div>
+</div>
+
+<div style="text-align:center;padding:10px 20px 5px;display:flex;justify-content:center;gap:20px;flex-wrap:wrap">
+  <button onclick="showScreen('screen-rules')" style="background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline">📖 የጨዋታ ህግጋት</button>
+  <a href="https://t.me/ethiodama_support" target="_blank" style="color:var(--muted);font-size:12px;text-decoration:underline">💬 እርዳታ (Telegram)</a>
+</div>
+<div style="text-align:center;padding:5px 20px 10px">
+  <p style="color:#555;font-size:11px;margin:0">⚠️ ኃላፊነት የተሞላበት ጨዋታ ያድርጉ። 18+ ብቻ። ሊቻሉት የሚችሉትን ያህል ብቻ ይጫወቱ።</p>
+</div>
+<footer>EthioDama © 2026 — Skill-based competitive Dama. Entry fees via Chapa.</footer>
+
+<!-- Socket.io client (served automatically by the EthioDama Node/Socket.io server) -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+/* =====================================================================
+   ETHIODAMA — CLIENT
+   Modules:
+   1. STATE MANAGEMENT & SOCKET CONNECTION
+   2. SCREEN NAVIGATION
+   3. TELEBIRR PAYMENT SIMULATION
+   4. MATCHMAKING LOBBY (server-driven, with bot fallback)
+   5. DAMA GAME ENGINE
+        5a. SHARED ENGINE (board rendering, move generation, flying kings)
+        5b. ONLINE MULTIPLAYER MODE (server-authoritative)
+        5c. FREE PLAY / BOT MODE (fully local, original logic)
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   1. STATE MANAGEMENT & SOCKET CONNECTION
+--------------------------------------------------------------------- */
+const AppState = {
+  wallet: 0,
+  selectedWager: 0,
+  pendingTxRef: null,
+  isFreePlay: false,
+  isOnline: false,
+  playerColor: 'red',
+  roomId: null,
+  transactions: [],
+  wins: 0,
+  losses: 0,
+  rank: 'Bronze',
+  timers: {
+    lobby: null,
+    turn: null
+  }
+};
+
+function addTransaction(type, amount, detail) {
+  const tx = {
+    type,       // 'entry_fee' | 'win' | 'refund'
+    amount,
+    detail,
+    time: new Date().toLocaleTimeString('am-ET', { hour: '2-digit', minute: '2-digit' })
+  };
+  AppState.transactions.unshift(tx);
+  if (AppState.transactions.length > 50) AppState.transactions.pop();
+  renderTransactionHistory();
+}
+
+function renderTransactionHistory() {
+  const list = document.getElementById('txList');
+  if (!list) return;
+  if (AppState.transactions.length === 0) {
+    list.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">ምንም ታሪክ የለም</p>';
+    return;
+  }
+  list.innerHTML = AppState.transactions.map(tx => {
+    const isPositive = tx.type === 'win' || tx.type === 'refund';
+    const sign = isPositive ? '+' : '-';
+    const color = isPositive ? '#4CAF50' : 'var(--crimson)';
+    const icon = tx.type === 'win' ? '🏆' : tx.type === 'refund' ? '↩️' : '🎮';
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.07)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px">${icon}</span>
+          <div>
+            <div style="color:var(--text);font-size:13px">${tx.detail}</div>
+            <div style="color:var(--muted);font-size:11px">${tx.time}</div>
+          </div>
+        </div>
+        <div style="color:${color};font-weight:700;font-size:15px">${sign}${tx.amount} ETB</div>
+      </div>
+    `;
+  }).join('');
+}
+
+const WAGER_OPTIONS = [5, 10, 25, 50, 100, 200];
+const HOUSE_RAKE_PERCENT = 0.20;
+const LOBBY_TIMEOUT_SECONDS = 60; // mirrors server LOBBY_TIMEOUT_MS
+const TURN_TIME_SECONDS = 30;     // mirrors server TURN_TIME_MS
+
+// Connect to the EthioDama Socket.io server.
+// If the HTML is served BY the same Node server, io() with no args
+// automatically connects to that same host/port.
+// NOTE: This requires the page to be loaded via http://.../ethiodama.html
+// (served by Express), NOT opened directly as a file:// path.
+let socket = null;
+try {
+  socket = io({ reconnectionAttempts: 3, timeout: 4000 });
+} catch (e) {
+  console.warn('Socket.io not available — running in offline/demo mode.', e);
+}
+
+const connBadge = document.getElementById('connBadge');
+
+if (socket) {
+  socket.on('connect', () => {
+  const notice = document.getElementById('depositNotice');
+  if (notice) notice.style.display = 'block';
+    connBadge.textContent = 'ONLINE';
+    connBadge.className = 'conn-badge online';
+  });
+  socket.on('disconnect', () => {
+    connBadge.textContent = 'OFFLINE';
+    connBadge.className = 'conn-badge offline';
+    if (AppState.isOnline && document.getElementById('screen-game').classList.contains('active')) {
+      document.getElementById('gameStatus').textContent =
+        'Connection lost. Server will resolve the match if possible.';
+    }
+  });
+  socket.on('connect_error', () => {
+    connBadge.textContent = 'OFFLINE';
+    connBadge.className = 'conn-badge offline';
+  });
+  socket.on('error_message', (data) => {
+    console.warn('Server error:', data.message);
+  });
+}
+
+/* ---------------------------------------------------------------------
+   2. SCREEN NAVIGATION
+--------------------------------------------------------------------- */
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+}
+
+function openHistory() {
+  document.getElementById('historyWallet').textContent = AppState.wallet + ' ETB';
+  if (document.getElementById('historyWins')) document.getElementById('historyWins').textContent = AppState.wins;
+  if (document.getElementById('historyLosses')) document.getElementById('historyLosses').textContent = AppState.losses;
+  renderTransactionHistory();
+  updateRank();
+  showScreen('screen-history');
+}
+
+function startFreePlay() {
+  if (!socket || !socket.connected) {
+    // Server ከሌለ — bot mode
+    AppState.isFreePlay = true;
+    AppState.selectedWager = 0;
+    initGame(0, true);
+    showScreen('screen-game');
+    return;
+  }
+
+  // Online ነን — Free Play multiplayer queue
+  AppState.selectedWager = 0;
+  AppState.isFreePlay = false;
+
+  document.getElementById('lobbyTitle').textContent = 'Free Play — ተጫዋች እየፈለጉ...';
+  document.getElementById('lobbyAmount').textContent = '0 (ነፃ)';
+  document.getElementById('lobbyText').textContent = 'ሌላ ነፃ ተጫዋቾ እየፈለጉ ነን...';
+  document.getElementById('lobbyNotice').style.display = 'none';
+  document.getElementById('continueBtn').style.display = 'none';
+  showScreen('screen-lobby');
+
+  AppState.timers.lobby = setInterval(() => {
+    const cur = parseInt(document.getElementById('lobbyTimer').textContent);
+    if (cur <= 1) {
+      clearInterval(AppState.timers.lobby);
+      // ተጫዋቾ ካልተገኘ → bot mode fallback
+      document.getElementById('lobbyNotice').style.display = 'block';
+      document.getElementById('continueBtn').style.display = 'block';
+      document.getElementById('continueBtn').onclick = () => {
+        AppState.isFreePlay = true;
+        initGame(0, true);
+        showScreen('screen-game');
+      };
+      return;
+    }
+    document.getElementById('lobbyTimer').textContent = cur - 1;
+  }, 1000);
+
+  socket.emit('join_queue_free', { wager: 0 });
+
+  socket.once('match_found', ({ roomId, role, wager }) => {
+    clearInterval(AppState.timers.lobby);
+    AppState.roomId = roomId;
+    AppState.playerColor = role;
+    AppState.isOnline = true;
+    AppState.isFreePlay = false;
+    initGame(0, false);
+    showScreen('screen-game');
+    setupOnlineListeners();
+  });
+}
+
+function updateWalletDisplay() {
+  document.getElementById('walletBadge').textContent = `💰 ${AppState.wallet} ETB`;
+  updateRank();
+}
+
+function updateRank() {
+  const wins = AppState.wins;
+  let rank, color, border, icon;
+  if (wins >= 50) { rank = 'Legend'; color = '#FF6B35'; border = '#FF6B35'; icon = '🏅'; }
+  else if (wins >= 30) { rank = 'Diamond'; color = '#00BFFF'; border = '#00BFFF'; icon = '💎'; }
+  else if (wins >= 20) { rank = 'Platinum'; color = '#E5E4E2'; border = '#E5E4E2'; icon = '⭐'; }
+  else if (wins >= 10) { rank = 'Gold'; color = '#FFD700'; border = '#FFD700'; icon = '🥇'; }
+  else if (wins >= 5) { rank = 'Silver'; color = '#C0C0C0'; border = '#C0C0C0'; icon = '🥈'; }
+  else { rank = 'Bronze'; color = '#cd7f32'; border = '#cd7f32'; icon = '🥉'; }
+
+  AppState.rank = rank;
+  const badge = document.getElementById('rankBadge');
+  if (badge) {
+    badge.textContent = `${icon} ${rank}`;
+    badge.style.color = color;
+    badge.style.borderColor = border;
+    badge.style.background = `${color}22`;
+  }
+  const histRank = document.getElementById('historyRank');
+  if (histRank) histRank.textContent = `${icon} ${rank}`;
+}
+
+/* ---------------------------------------------------------------------
+   INIT: Build the wager selection grid dynamically
+--------------------------------------------------------------------- */
+function initWagerGrid() {
+  const grid = document.getElementById('wagerGrid');
+  grid.innerHTML = '';
+  WAGER_OPTIONS.forEach(amount => {
+    const card = document.createElement('div');
+    card.className = 'wager-card';
+    card.innerHTML = `
+      <div class="amount">${amount} ETB</div>
+      <div class="label">Entry Fee</div>
+    `;
+    card.addEventListener('click', () => onWagerSelected(amount));
+    grid.appendChild(card);
+  });
+}
+
+function onWagerSelected(amount) {
+  AppState.selectedWager = amount;
+  openChapaPayment(amount);
+}
+
+/* ---------------------------------------------------------------------
+   3. CHAPA REAL PAYMENT INTEGRATION
+--------------------------------------------------------------------- */
+function openChapaPayment(amount) {
+  if (!socket || !socket.connected) {
+    alert('Server ጋር አልተገናኘም። እንደገና ይሞክሩ።');
+    return;
+  }
+
+  const body = document.getElementById('telebirrBody');
+  body.innerHTML = `
+    <div class="processing">
+      <div class="spinner"></div>
+      <p>ክፍያ እየተዘጋጀ ነው...</p>
+    </div>
+  `;
+  document.getElementById('telebirrModal').classList.add('active');
+
+  // Chapa account ገና inactive ስለሆነ (compliance pending)፣ በቀጥታ Telebirr ተጠቀም
+  socket.emit('initiate_payment', { wager: amount, name: 'EthioDama Player', email: 'player@ethiodama.com', provider: 'telebirr' });
+
+  // Server ጨርሶ ምላሽ ካልሰጠ (crash/timeout) modal ለዘላለም stuck እንዳይሆን — 15 ሰከንድ ገደብ
+  const paymentTimeout = setTimeout(() => {
+    showPaymentError('ጊዜው አልቀ - ከ Server ጋር ግንኙነት ተቋረጠ');
+  }, 15000);
+
+  function cleanupPaymentListeners() {
+    clearTimeout(paymentTimeout);
+    socket.off('payment_url', onPaymentUrl);
+    socket.off('payment_confirmed', onPaymentConfirmed);
+    socket.off('payment_failed', onPaymentFailed);
+    socket.off('error_message', onErrorMessage);
+  }
+
+  function showPaymentError(msg) {
+    cleanupPaymentListeners();
+    body.innerHTML = `
+      <div style="text-align:center;padding:20px;color:#ff6b6b">
+        <p>❌ ${msg || 'ክፍያ አልተሳካም'}</p>
+        <button class="pay-btn" id="retryBtn">እንደገና ሞክር</button>
+      </div>
+    `;
+    document.getElementById('retryBtn').addEventListener('click', () => {
+      document.getElementById('telebirrModal').classList.remove('active');
+    });
+  }
+
+  function onErrorMessage(data) {
+    console.warn('Server error:', data.message);
+    showPaymentError(data.message);
+  }
+  socket.on('error_message', onErrorMessage);
+
+  function onPaymentUrl({ checkoutUrl, txRef, wager }) {
+    clearTimeout(paymentTimeout);
+    AppState.pendingTxRef = txRef;
+    body.innerHTML = `
+      <div class="row"><span>Merchant</span><span>EthioDama Gaming</span></div>
+      <div class="row"><span>Reference</span><span>${txRef}</span></div>
+      <div class="row"><span>Wager</span><span>${wager} ETB</span></div>
+      <div class="total">${wager}.00 ETB</div>
+      <button class="pay-btn" id="chapaPayBtn">📱 telebirr ክፍያ ክፈት</button>
+      <span class="cancel-link" id="cancelBtn">ሰርዝ</span>
+    `;
+
+    document.getElementById('chapaPayBtn').addEventListener('click', () => {
+      window.open(checkoutUrl, '_blank');
+      body.innerHTML = `
+        <div class="processing">
+          <div class="spinner"></div>
+          <p>ክፍያ እየተጠበቀ ነው...</p>
+          <small style="color:#aaa;margin-top:10px;display:block">telebirr ላይ ክፍያ ከፈፀሙ ወደዚህ ይመለሱ</small>
+        </div>
+        <button class="pay-btn" id="verifyBtn" style="margin-top:15px;background:#28a745">✅ ክፍያ ፈፅሜያለሁ</button>
+        <span class="cancel-link" id="cancelBtn2">ሰርዝ</span>
+      `;
+      document.getElementById('verifyBtn').addEventListener('click', () => {
+        body.innerHTML = `<div class="processing"><div class="spinner"></div><p>ክፍያ እያረጋገጠ ነው...</p></div>`;
+        socket.emit('verify_payment', { txRef: AppState.pendingTxRef });
+      });
+      document.getElementById('cancelBtn2').addEventListener('click', onCancelPayment);
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', onCancelPayment);
+  }
+  socket.on('payment_url', onPaymentUrl);
+
+  function onPaymentConfirmed({ wager }) {
+    cleanupPaymentListeners();
+    document.getElementById('telebirrModal').classList.remove('active');
+    AppState.pendingTxRef = null;
+    addTransaction('entry_fee', wager, `የምዝገባ ክፍያ — ${wager} ETB ጨዋታ`);
+    startMatchmaking(wager);
+  }
+  socket.on('payment_confirmed', onPaymentConfirmed);
+
+  function onPaymentFailed() {
+    showPaymentError('ክፍያ አልተሳካም');
+  }
+  socket.on('payment_failed', onPaymentFailed);
+}
+
+function onCancelPayment() {
+  document.getElementById('telebirrModal').classList.remove('active');
+  AppState.selectedWager = 0;
+  AppState.pendingTxRef = null;
+}
+
+/* ---------------------------------------------------------------------
+   4. MATCHMAKING LOBBY
+   - If socket is connected: join the server queue and wait for either
+     `match_found` (real opponent) or `matchmaking_timeout` (bot fallback).
+   - If socket is unavailable: run the original local 60s simulation.
+--------------------------------------------------------------------- */
+function startMatchmaking(amount) {
+  AppState.isFreePlay = false;
+  AppState.isOnline = false;
+
+  document.getElementById('lobbyAmount').textContent = amount;
+  document.getElementById('lobbyTitle').textContent = 'Finding an active opponent...';
+  document.getElementById('lobbyText').style.display = 'block';
+  document.getElementById('lobbySpinner').style.display = 'block';
+  document.getElementById('lobbyNotice').classList.remove('show');
+  document.getElementById('continueBtn').classList.remove('show');
+
+  showScreen('screen-lobby');
+
+  if (socket && socket.connected) {
+    startServerMatchmaking(amount);
+  } else {
+    startLocalMatchmakingFallback(amount);
+  }
+}
+
+/* --- SERVER-DRIVEN MATCHMAKING --- */
+function startServerMatchmaking(amount) {
+  let remaining = LOBBY_TIMEOUT_SECONDS;
+  const timerEl = document.getElementById('lobbyTimer');
+  timerEl.textContent = remaining;
+
+  AppState.timers.lobby = setInterval(() => {
+    remaining--;
+    timerEl.textContent = Math.max(remaining, 0);
+    if (remaining <= 0) {
+      clearInterval(AppState.timers.lobby);
+    }
+  }, 1000);
+
+  socket.emit('join_queue_free', { wager: amount });
+
+  // Real opponent found — server is authoritative for this game.
+  socket.once('match_found', ({ roomId, role, wager }) => {
+    clearInterval(AppState.timers.lobby);
+    AppState.roomId = roomId;
+    AppState.playerColor = role;
+    AppState.isOnline = true;
+    initGame(wager, false);
+  });
+
+  // No opponent within 60s — server tells us to fall back to bot.
+  socket.once('matchmaking_timeout', ({ wager }) => {
+    clearInterval(AppState.timers.lobby);
+    AppState.wallet += wager; // refund
+    updateWalletDisplay();
+
+    document.getElementById('lobbySpinner').style.display = 'none';
+    document.getElementById('lobbyTitle').textContent = 'No Opponent Found';
+    document.getElementById('lobbyText').style.display = 'none';
+    document.getElementById('lobbyNotice').classList.add('show');
+    document.getElementById('continueBtn').classList.add('show');
+  });
+}
+
+document.getElementById('cancelQueueBtn').addEventListener('click', () => {
+  clearInterval(AppState.timers.lobby);
+  if (socket && socket.connected) {
+    socket.emit('leave_queue');
+    socket.off('match_found');
+    socket.off('matchmaking_timeout');
+  }
+  // Refund if a wager was placed but no match started
+  if (AppState.selectedWager > 0 && !AppState.isOnline) {
+    AppState.wallet += AppState.selectedWager;
+    updateWalletDisplay();
+    AppState.selectedWager = 0;
+  }
+  showScreen('screen-landing');
+});
+
+document.getElementById('continueBtn').addEventListener('click', () => {
+  AppState.isFreePlay = true;
+  AppState.isOnline = false;
+  initGame(AppState.selectedWager, true);
+});
+
+/* --- LOCAL FALLBACK MATCHMAKING (used only if server unreachable) --- */
+function startLocalMatchmakingFallback(amount) {
+  let remaining = LOBBY_TIMEOUT_SECONDS;
+  const timerEl = document.getElementById('lobbyTimer');
+  timerEl.textContent = remaining;
+
+  AppState.timers.lobby = setInterval(() => {
+    remaining--;
+    timerEl.textContent = remaining;
+
+    if (remaining <= 0) {
+      clearInterval(AppState.timers.lobby);
+      onLocalMatchmakingTimeout(amount);
+    }
+  }, 1000);
+}
+
+function onLocalMatchmakingTimeout(amount) {
+  AppState.isFreePlay = true;
+  AppState.isOnline = false;
+  AppState.wallet += amount; // refund
+  updateWalletDisplay();
+
+  document.getElementById('lobbySpinner').style.display = 'none';
+  document.getElementById('lobbyTitle').textContent = 'No Opponent Found';
+  document.getElementById('lobbyText').style.display = 'none';
+  document.getElementById('lobbyNotice').classList.add('show');
+  document.getElementById('continueBtn').classList.add('show');
+}
+
+/* ---------------------------------------------------------------------
+   5. DAMA (CHECKERS) GAME ENGINE
+--------------------------------------------------------------------- */
+
+let board = [];
+let currentTurn = 'red';
+let selectedCell = null;
+let legalMovesForSelected = [];
+let mustContinueCapture = null;
+
+/* --- 5a. SHARED ENGINE HELPERS (board setup, rendering, move gen) --- */
+
+function createInitialBoard() {
+  const b = Array.from({length: 8}, () => Array(8).fill(null));
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 8; col++) {
+      if ((row + col) % 2 === 1) b[row][col] = {color: 'white', king: false};
+    }
+  }
+  for (let row = 5; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      if ((row + col) % 2 === 1) b[row][col] = {color: 'red', king: false};
+    }
+  }
+  return b;
+}
+
+function inBounds(r, c) {
+  return r >= 0 && r < 8 && c >= 0 && c < 8;
+}
+
+// Returns all legal moves for the piece at (row, col).
+// Men: single-step diagonal moves/captures (forward + backward captures allowed).
+// Kings: FLYING KING rules — slide any distance along a diagonal for simple
+// moves, and capture by landing on ANY empty square beyond a single enemy
+// piece along that diagonal.
+function getMovesForPiece(row, col) {
+  const piece = board[row][col];
+  if (!piece) return [];
+
+  const moves = [];
+  const directions = piece.king
+    ? [[-1,-1],[-1,1],[1,-1],[1,1]]
+    : (piece.color === 'red' ? [[-1,-1],[-1,1]] : [[1,-1],[1,1]]);
+
+  if (piece.king) {
+    directions.forEach(([dr, dc]) => {
+      let r = row + dr, c = col + dc;
+      // Simple slides over empty squares
+      while (inBounds(r, c) && !board[r][c]) {
+        moves.push({row: r, col: c, isCapture: false});
+        r += dr; c += dc;
+      }
+      // If we stopped on an enemy piece, check landing squares beyond it
+      if (inBounds(r, c) && board[r][c] && board[r][c].color !== piece.color) {
+        const midR = r, midC = c;
+        let landR = r + dr, landC = c + dc;
+        while (inBounds(landR, landC) && !board[landR][landC]) {
+          moves.push({
+            row: landR, col: landC, isCapture: true,
+            capturedPos: {row: midR, col: midC}
+          });
+          landR += dr; landC += dc;
+        }
+      }
+    });
+    return moves;
+  }
+
+  // Men: simple one-step moves
+  directions.forEach(([dr, dc]) => {
+    const r = row + dr, c = col + dc;
+    if (inBounds(r, c) && !board[r][c]) {
+      moves.push({row: r, col: c, isCapture: false});
+    }
+  });
+
+  // Men: one-step captures (can capture in any diagonal direction)
+  const captureDirections = [[-1,-1],[-1,1],[1,-1],[1,1]];
+  captureDirections.forEach(([dr, dc]) => {
+    const midR = row + dr, midC = col + dc;
+    const landR = row + dr*2, landC = col + dc*2;
+    if (inBounds(landR, landC) && inBounds(midR, midC)) {
+      const midPiece = board[midR][midC];
+      if (midPiece && midPiece.color !== piece.color && !board[landR][landC]) {
+        moves.push({
+          row: landR, col: landC, isCapture: true,
+          capturedPos: {row: midR, col: midC}
+        });
+      }
+    }
+  });
+
+  return moves;
+}
+
+function getAllCapturesForPlayer(color) {
+  let captures = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if (p && p.color === color) {
+        const moves = getMovesForPiece(r, c).filter(m => m.isCapture);
+        if (moves.length > 0) captures.push({row: r, col: c, moves});
+      }
+    }
+  }
+  return captures;
+}
+
+function playerHasAnyMove(color) {
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if (p && p.color === color && getMovesForPiece(r, c).length > 0) return true;
+    }
+  }
+  return false;
+}
+
+function countPieces(color) {
+  let count = 0;
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (board[r][c] && board[r][c].color === color) count++;
+    }
+  }
+  return count;
+}
+
+// Payout = (Wager * 2) - 20% House Rake  ==  80% of total pot
+function calculatePayout(wager) {
+  const pot = wager * 2;
+  const rake = pot * HOUSE_RAKE_PERCENT;
+  return Math.round(pot - rake);
+}
+
+/* --- RENDERING (shared by online + free play) --- */
+function renderBoard() {
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+
+  // In online mode, the White player views the board flipped so their
+  // pieces appear at the bottom (their "forward" direction).
+  const flip = AppState.isOnline && AppState.playerColor === 'white';
+
+  for (let displayRow = 0; displayRow < 8; displayRow++) {
+    for (let displayCol = 0; displayCol < 8; displayCol++) {
+      const row = flip ? 7 - displayRow : displayRow;
+      const col = flip ? 7 - displayCol : displayCol;
+
+      const cell = document.createElement('div');
+      cell.className = 'cell ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
+      cell.dataset.row = row;
+      cell.dataset.col = col;
+
+      const piece = board[row][col];
+      if (piece) {
+        const pieceEl = document.createElement('div');
+        pieceEl.className = `piece ${piece.color}` + (piece.king ? ' king' : '');
+        if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
+          pieceEl.classList.add('selected');
+        }
+        cell.appendChild(pieceEl);
+      }
+
+      if (legalMovesForSelected.some(m => m.row === row && m.col === col)) {
+        cell.classList.add('legal-move');
+      }
+
+      cell.addEventListener('click', () => onCellClick(row, col));
+      boardEl.appendChild(cell);
+    }
+  }
+
+  document.getElementById('badgeRed').classList.toggle('active', currentTurn === 'red');
+  document.getElementById('badgeWhite').classList.toggle('active', currentTurn === 'white');
+}
+
+/* --- GAME INIT (shared entry point for both modes) --- */
+function initGame(wager, freePlay) {
+  board = createInitialBoard();
+  currentTurn = 'red';
+  selectedCell = null;
+  legalMovesForSelected = [];
+  mustContinueCapture = null;
+
+  document.getElementById('gameWagerDisplay').textContent = wager;
+  document.getElementById('potentialPayout').textContent = calculatePayout(wager);
+
+  // Label badges based on mode/role
+  if (AppState.isOnline) {
+    const youAreRed = AppState.playerColor === 'red';
+    document.getElementById('redLabel').textContent = youAreRed ? 'You (Red)' : 'Opponent (Red)';
+    document.getElementById('whiteLabel').textContent = youAreRed ? 'Opponent (White)' : 'You (White)';
+    document.getElementById('gameStatus').textContent =
+      'Match found! ' + (currentTurn === AppState.playerColor ? 'Your turn.' : "Opponent's turn.");
+  } else {
+    document.getElementById('redLabel').textContent = 'You (Red)';
+    document.getElementById('whiteLabel').textContent = 'Opponent (White)';
+    document.getElementById('gameStatus').textContent = freePlay
+      ? 'Free Play Mode — your turn (Red).'
+      : 'Your turn — select a red piece to move.';
+  }
+
+  renderBoard();
+  startTurnTimer();
+  showScreen('screen-game');
+
+  if (AppState.isOnline) {
+    attachOnlineSocketHandlers();
+  }
+}
+
+/* --- CLICK ROUTER: dispatch to online or local logic --- */
+function onCellClick(row, col) {
+  if (AppState.isOnline) {
+    onCellClickOnline(row, col);
+  } else {
+    onCellClickLocal(row, col);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   5b. ONLINE MULTIPLAYER MODE (server-authoritative)
+   The client only SELECTS a piece locally (for highlighting); the
+   actual move is sent to the server, which validates and broadcasts
+   the resulting board state back to both players.
+--------------------------------------------------------------------- */
+function onCellClickOnline(row, col) {
+  if (currentTurn !== AppState.playerColor) return; // not your turn
+
+  const piece = board[row][col];
+
+  if (selectedCell) {
+    const move = legalMovesForSelected.find(m => m.row === row && m.col === col);
+    if (move) {
+      // Send move to server; DO NOT mutate board locally —
+      // wait for authoritative 'game_state' broadcast.
+      socket.emit('make_move', {
+        from: { row: selectedCell.row, col: selectedCell.col },
+        to: { row: move.row, col: move.col }
+      });
+      selectedCell = null;
+      legalMovesForSelected = [];
+      renderBoard();
+      return;
+    }
+  }
+
+  if (piece && piece.color === AppState.playerColor) {
+    if (mustContinueCapture &&
+        !(mustContinueCapture.row === row && mustContinueCapture.col === col)) {
+      return;
+    }
+
+    let moves = getMovesForPiece(row, col);
+    const allCaptures = getAllCapturesForPlayer(AppState.playerColor);
+    if (allCaptures.length > 0) {
+      const thisPieceCaptures = moves.filter(m => m.isCapture);
+      if (thisPieceCaptures.length === 0) return;
+      moves = thisPieceCaptures;
+    }
+
+    selectedCell = {row, col};
+    legalMovesForSelected = moves;
+    renderBoard();
+  }
+}
+
+function attachOnlineSocketHandlers() {
+  // Remove any previous listeners to avoid duplicates across games
+  socket.off('game_state');
+  socket.off('game_over');
+
+  socket.on('game_state', ({ board: newBoard, turn, mustContinueCapture: mcc, lastMove }) => {
+    board = newBoard;
+    currentTurn = turn;
+    mustContinueCapture = mcc;
+    selectedCell = null;
+    legalMovesForSelected = [];
+
+    resetTurnTimer();
+    renderBoard();
+
+    if (currentTurn === AppState.playerColor) {
+      document.getElementById('gameStatus').textContent =
+        mustContinueCapture ? 'Capture again with the same piece!' : 'Your turn — make a move.';
+    } else {
+      document.getElementById('gameStatus').textContent = "Opponent's turn...";
+    }
+  });
+
+  socket.on('game_over', ({ result, payout, reason, wager }) => {
+    clearInterval(AppState.timers.turn);
+    showOnlineResult(result, payout, reason, wager);
+  });
+}
+
+function showOnlineResult(result, payout, reason, wager) {
+  const titleEl = document.getElementById('resultTitle');
+  const payoutEl = document.getElementById('resultPayout');
+  const reasonEl = document.getElementById('resultReason');
+  const rake = Math.round(wager * 2 * HOUSE_RAKE_PERCENT);
+
+  const reasonText = {
+    capture: 'Game ended by piece capture.',
+    no_moves: 'Opponent had no legal moves remaining.',
+    timeout: 'Turn timer expired.',
+    disconnect: 'Opponent disconnected.',
+    forfeit: 'Opponent forfeited the match.'
+  }[reason] || '';
+
+  if (result === 'win') {
+    titleEl.textContent = '🏆 You Win!';
+    titleEl.className = 'win';
+    payoutEl.textContent = `+${payout} ETB`;
+    payoutEl.style.color = '#4CAF50';
+    AppState.wallet += payout;
+    AppState.wins++;
+    addTransaction('win', payout, `አሸነፍህ — ${wager} ETB ጨዋታ`);
+  } else {
+    titleEl.textContent = '💀 You Lose';
+    titleEl.className = 'lose';
+    payoutEl.textContent = `-${wager} ETB`;
+    payoutEl.style.color = 'var(--crimson)';
+    AppState.losses++;
+    addTransaction('entry_fee', wager, `ተሸነፍህ — ${wager} ETB ጨዋታ`);
+  }
+  updateRank();
+
+  document.getElementById('resultWager').textContent = wager;
+  document.getElementById('resultRake').textContent = rake;
+  reasonEl.textContent = reasonText;
+  updateWalletDisplay();
+
+  document.getElementById('resultOverlay').classList.add('active');
+}
+
+/* ---------------------------------------------------------------------
+   5c. FREE PLAY / LOCAL BOT MODE (original fully-local logic)
+--------------------------------------------------------------------- */
+function onCellClickLocal(row, col) {
+  if (currentTurn !== 'red') return;
+
+  const piece = board[row][col];
+
+  if (selectedCell) {
+    const move = legalMovesForSelected.find(m => m.row === row && m.col === col);
+    if (move) {
+      executeMoveLocal(selectedCell, move);
+      return;
+    }
+  }
+
+  if (piece && piece.color === 'red') {
+    if (mustContinueCapture &&
+        !(mustContinueCapture.row === row && mustContinueCapture.col === col)) {
+      return;
+    }
+
+    let moves = getMovesForPiece(row, col);
+    const allCaptures = getAllCapturesForPlayer('red');
+    if (allCaptures.length > 0) {
+      const thisPieceCaptures = moves.filter(m => m.isCapture);
+      if (thisPieceCaptures.length === 0) return;
+      moves = thisPieceCaptures;
+    }
+
+    selectedCell = {row, col};
+    legalMovesForSelected = moves;
+    renderBoard();
+  }
+}
+
+function executeMoveLocal(from, move) {
+  const piece = board[from.row][from.col];
+  board[from.row][from.col] = null;
+  board[move.row][move.col] = piece;
+
+  if (move.isCapture) {
+    board[move.capturedPos.row][move.capturedPos.col] = null;
+  }
+
+  if (piece.color === 'red' && move.row === 0) piece.king = true;
+  if (piece.color === 'white' && move.row === 7) piece.king = true;
+
+  if (move.isCapture) {
+    const furtherCaptures = getMovesForPiece(move.row, move.col).filter(m => m.isCapture);
+    if (furtherCaptures.length > 0) {
+      mustContinueCapture = {row: move.row, col: move.col};
+      selectedCell = {row: move.row, col: move.col};
+      legalMovesForSelected = furtherCaptures;
+      renderBoard();
+      document.getElementById('gameStatus').textContent = 'Capture again with the same piece!';
+      return;
+    }
+  }
+
+  selectedCell = null;
+  legalMovesForSelected = [];
+  mustContinueCapture = null;
+
+  if (checkGameOverLocal()) return;
+
+  switchTurnLocal();
+}
+
+function switchTurnLocal() {
+  currentTurn = currentTurn === 'red' ? 'white' : 'red';
+  renderBoard();
+  resetTurnTimer();
+
+  if (currentTurn === 'white') {
+    document.getElementById('gameStatus').textContent = "Opponent's turn (Bot thinking)...";
+    setTimeout(botMove, 900);
+  } else {
+    document.getElementById('gameStatus').textContent = 'Your turn — select a red piece to move.';
+  }
+}
+
+function botMove() {
+  if (currentTurn !== 'white') return;
+
+  const captures = getAllCapturesForPlayer('white');
+  let pieceMoves;
+
+  if (captures.length > 0) {
+    const choice = captures[Math.floor(Math.random() * captures.length)];
+    pieceMoves = {from: {row: choice.row, col: choice.col}, moves: choice.moves};
+  } else {
+    let allMoves = [];
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const p = board[r][c];
+        if (p && p.color === 'white') {
+          const moves = getMovesForPiece(r, c);
+          if (moves.length > 0) allMoves.push({from: {row: r, col: c}, moves});
+        }
+      }
+    }
+    if (allMoves.length === 0) {
+      checkGameOverLocal();
+      return;
+    }
+    pieceMoves = allMoves[Math.floor(Math.random() * allMoves.length)];
+  }
+
+  let from = pieceMoves.from;
+  let move = pieceMoves.moves[Math.floor(Math.random() * pieceMoves.moves.length)];
+
+  performBotMoveWithChaining(from, move);
+}
+
+function performBotMoveWithChaining(from, move) {
+  const piece = board[from.row][from.col];
+  board[from.row][from.col] = null;
+  board[move.row][move.col] = piece;
+
+  if (move.isCapture) {
+    board[move.capturedPos.row][move.capturedPos.col] = null;
+  }
+  if (piece.color === 'white' && move.row === 7) piece.king = true;
+
+  renderBoard();
+
+  if (move.isCapture) {
+    const further = getMovesForPiece(move.row, move.col).filter(m => m.isCapture);
+    if (further.length > 0) {
+      const nextMove = further[Math.floor(Math.random() * further.length)];
+      setTimeout(() => performBotMoveWithChaining({row: move.row, col: move.col}, nextMove), 500);
+      return;
+    }
+  }
+
+  if (checkGameOverLocal()) return;
+  switchTurnLocal();
+}
+
+/* --- TURN TIMER (shared display, behavior differs slightly per mode) --- */
+function startTurnTimer() {
+  let remaining = TURN_TIME_SECONDS;
+  document.getElementById('turnTimer').textContent = remaining;
+
+  AppState.timers.turn = setInterval(() => {
+    remaining--;
+    document.getElementById('turnTimer').textContent = Math.max(remaining, 0);
+
+    if (remaining <= 0) {
+      clearInterval(AppState.timers.turn);
+
+      if (!AppState.isOnline) {
+        // Local mode: time's up on player's turn = forfeit/loss
+        if (currentTurn === 'red') {
+          endGameLocal('lose');
+        }
+      }
+      // Online mode: the SERVER enforces the 30s turn timer and will
+      // emit 'game_over' (reason: 'timeout') if a player stalls.
+      // The client timer here is purely a visual countdown.
+    }
+  }, 1000);
+}
+
+function resetTurnTimer() {
+  clearInterval(AppState.timers.turn);
+  startTurnTimer();
+}
+
+/* --- LOCAL GAME OVER CHECK (free play / bot mode only) --- */
+function checkGameOverLocal() {
+  const redPieces = countPieces('red');
+  const whitePieces = countPieces('white');
+
+  if (redPieces === 0) {
+    endGameLocal('lose');
+    return true;
+  }
+  if (whitePieces === 0) {
+    endGameLocal('win');
+    return true;
+  }
+
+  const hasMoves = playerHasAnyMove(currentTurn);
+  if (!hasMoves) {
+    endGameLocal(currentTurn === 'red' ? 'lose' : 'win');
+    return true;
+  }
+
+  return false;
+}
+
+function endGameLocal(result) {
+  clearInterval(AppState.timers.turn);
+
+  const wager = AppState.selectedWager;
+  const payout = calculatePayout(wager);
+  const rake = Math.round(wager * 2 * HOUSE_RAKE_PERCENT);
+
+  const titleEl = document.getElementById('resultTitle');
+  const payoutEl = document.getElementById('resultPayout');
+  document.getElementById('resultReason').textContent = '';
+
+  if (result === 'win') {
+    titleEl.textContent = '🏆 You Win!';
+    titleEl.className = 'win';
+    payoutEl.textContent = `+${payout} ETB`;
+    payoutEl.style.color = '#4CAF50';
+    AppState.wallet += payout;
+    AppState.wins++;
+    addTransaction('win', payout, `አሸነፍህ — ${wager} ETB ጨዋታ`);
+  } else {
+    titleEl.textContent = '💀 You Lose';
+    titleEl.className = 'lose';
+    payoutEl.textContent = `-${wager} ETB`;
+    payoutEl.style.color = 'var(--crimson)';
+    AppState.losses++;
+    addTransaction('entry_fee', wager, `ተሸነፍህ — ${wager} ETB ጨዋታ`);
+  }
+  updateRank();
+
+  document.getElementById('resultWager').textContent = wager;
+  document.getElementById('resultRake').textContent = rake;
+  updateWalletDisplay();
+
+  document.getElementById('resultOverlay').classList.add('active');
+}
+
+/* ---------------------------------------------------------------------
+   RESULT MODAL — return to landing
+--------------------------------------------------------------------- */
+document.getElementById('playAgainBtn').addEventListener('click', () => {
+  document.getElementById('resultOverlay').classList.remove('active');
+
+  // Clean up online socket listeners for this finished game
+  if (socket) {
+    socket.off('game_state');
+    socket.off('game_over');
+  }
+  AppState.isOnline = false;
+  AppState.roomId = null;
+
+  showScreen('screen-landing');
+});
+
+/* ---------------------------------------------------------------------
+   APP INIT
+--------------------------------------------------------------------- */
+initWagerGrid();
+updateWalletDisplay();
+</script>
+</body>
+</html>
